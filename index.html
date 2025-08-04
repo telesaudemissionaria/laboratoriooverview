@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">MISSIONLAB – Análise Laboratorial Inteligente para Missões</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for modern icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* bg-slate-50 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .tab-active {
+            border-color: #2563eb; /* blue-600 */
+            color: #2563eb; /* blue-600 */
+            font-weight: 600;
+        }
+        .lang-btn.active {
+            color: #2563eb; /* blue-600 */
+            font-weight: 700;
+            text-decoration: underline;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .icon-wrapper {
+            @apply text-4xl text-blue-600 mb-4 flex justify-center items-center;
+        }
+        .differentiator-icon {
+            @apply text-2xl mr-3 text-teal-600;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <!-- Modal de Aviso -->
+    <div id="disclaimer-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 id="modal-title" class="text-2xl font-bold mb-4 text-blue-600">Aviso Importante</h3>
+            <p id="modal-disclaimer" class="text-slate-700 mb-6 text-sm leading-relaxed">
+                Os valores de laboratório indicados neste programa foram extraídos das melhores fontes bibliográficas. Não obstante são apenas referências de uso acadêmico e ante qualquer dúvida sugerimos consulte com seu laboratório de referência. Não nos responsabilizamos pela aplicação de ditos valores a situações clínicas pontuais. Isenção de responsabilidade: Não somos responsáveis por nenhum tipo de falha na app, ou erro. Aceita usar a app tal como é, sem garantia de nenhum tipo. O uso deste programa significa que está de acordo com as POLÍTICAS DE PRIVACIDADE.
+            </p>
+            <label class="flex items-center justify-center mb-6 cursor-pointer">
+                <input type="checkbox" id="privacy-checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded">
+                <span id="privacy-text" class="ml-2 text-slate-700 text-sm">Li e concordo com as POLÍTICAS DE PRIVACIDADE</span>
+            </label>
+            <button id="accept-button" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-full opacity-50 cursor-not-allowed" disabled>Aceitar e Continuar</button>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold text-blue-600">MISSIONLAB</a>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#desafio" class="text-slate-600 hover:text-blue-600 transition-colors" data-translate="nav-desafio">O Desafio</a>
+                <a href="#solucao" class="text-slate-600 hover:text-blue-600 transition-colors" data-translate="nav-solucao">A Solução</a>
+                <a href="#diferenciais" class="text-slate-600 hover:text-blue-600 transition-colors" data-translate="nav-diferenciais">Diferenciais</a>
+                <a href="#impacto" class="text-slate-600 hover:text-blue-600 transition-colors" data-translate="nav-impacto">Impacto</a>
+            </div>
+            <div class="flex items-center space-x-4">
+                 <div class="flex space-x-2 border-r pr-4 mr-2">
+                    <button class="lang-btn text-slate-600 hover:text-blue-600 font-semibold" data-lang="pt">PT</button>
+                    <button class="lang-btn text-slate-600 hover:text-blue-600 font-semibold" data-lang="es">ES</button>
+                    <button class="lang-btn text-slate-600 hover:text-blue-600 font-semibold" data-lang="en">EN</button>
+                </div>
+                <button id="mobile-menu-button" class="md:hidden text-slate-800 focus:outline-none">
+                    <i class="fas fa-bars text-2xl"></i>
+                </button>
+            </div>
+        </nav>
+         <!-- Menu Móvel -->
+        <div id="mobile-menu" class="hidden md:hidden px-6 pb-4">
+            <a href="#desafio" class="block py-2 text-slate-600 hover:text-blue-600" data-translate="nav-desafio">O Desafio</a>
+            <a href="#solucao" class="block py-2 text-slate-600 hover:text-blue-600" data-translate="nav-solucao">A Solução</a>
+            <a href="#diferenciais" class="block py-2 text-slate-600 hover:text-blue-600" data-translate="nav-diferenciais">Diferenciais</a>
+            <a href="#impacto" class="block py-2 text-slate-600 hover:text-blue-600" data-translate="nav-impacto">Impacto</a>
+        </div>
+    </header>
+
+    <main>
+        <!-- Seção Hero -->
+        <section id="hero" class="bg-blue-600 text-white">
+            <div class="container mx-auto px-6 py-20 md:py-32 text-center">
+                <h2 id="hero-title" class="text-4xl md:text-6xl font-bold leading-tight mb-4">Análise Laboratorial Inteligente para Missões</h2>
+                <p id="hero-subtitle" class="text-lg md:text-xl text-blue-200 max-w-3xl mx-auto mb-8">"Se Deus nos chamou para servir aos confins da terra, Ele também proverá os meios para cuidar de quem serve."</p>
+                <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+                    <a href="#solucao" id="hero-button-discover" class="bg-white text-blue-600 font-bold py-3 px-8 rounded-full hover:bg-blue-100 transition-transform transform hover:scale-105">Conheça a Ferramenta</a>
+                    <a href="https://telesaudemissionaria.github.io/missionlab/" id="hero-button-access-app" target="_blank" rel="noopener noreferrer" class="bg-teal-500 text-white font-bold py-3 px-8 rounded-full hover:bg-teal-600 transition-transform transform hover:scale-105">ACESSE A APP</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seção Desafio -->
+        <section id="desafio" class="py-16 md:py-24">
+            <div class="container mx-auto px-6 text-center">
+                <h3 id="desafio-title" class="text-3xl md:text-4xl font-bold mb-4">O Desafio no Campo Missionário</h3>
+                <p id="desafio-text" class="max-w-3xl mx-auto text-slate-600 mb-12">Em muitos campos missionários, a distância, a falta de especialistas e a conectividade limitada transformam cada decisão de saúde em um desafio crítico. Missionários enfrentam a incerteza e a angústia de interpretar dados de saúde sem o apoio adequado, onde cada minuto conta.</p>
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="bg-white p-8 rounded-lg shadow-md">
+                        <div class="icon-wrapper"><i class="fas fa-map-marker-alt"></i></div>
+                        <h4 id="desafio-iso-title" class="text-xl font-bold mb-2">Isolamento Geográfico</h4>
+                        <p id="desafio-iso-text" class="text-slate-600">A vasta distância de centros médicos qualificados torna o acesso a especialistas quase impossível.</p>
+                    </div>
+                    <div class="bg-white p-8 rounded-lg shadow-md">
+                        <div class="icon-wrapper"><i class="fas fa-wifi-slash"></i></div>
+                        <h4 id="desafio-con-title" class="text-xl font-bold mb-2">Conectividade Limitada</h4>
+                        <p id="desafio-con-text" class="text-slate-600">A falta de internet estável impede o acesso a teleconsultas ou pesquisas em tempo real.</p>
+                    </div>
+                    <div class="bg-white p-8 rounded-lg shadow-md">
+                        <div class="icon-wrapper"><i class="fas fa-question-circle"></i></div>
+                        <h4 id="desafio-inc-title" class="text-xl font-bold mb-2">Incerteza no Diagnóstico</h4>
+                        <p id="desafio-inc-text" class="text-slate-600">A pressão de tomar decisões clínicas complexas sem um suporte confiável gera estresse e riscos.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seção Solução com Abas -->
+        <section id="solucao" class="py-16 md:py-24 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h3 id="solucao-title" class="text-3xl md:text-4xl font-bold mb-4">A Solução: Como o MISSIONLAB Capacita Você</h3>
+                    <p id="solucao-text" class="max-w-3xl mx-auto text-slate-600">O MISSIONLAB é uma plataforma desenhada para simplificar a complexidade. Através de um assistente passo a passo, ele guia o usuário em cada etapa, desde a coleta de dados até a geração de um relatório inteligente, transformando incerteza em ação confiante.</p>
+                </div>
+                
+                <div class="max-w-6xl mx-auto flex flex-col md:flex-row gap-8 md:gap-12 items-center">
+                    <div class="md:w-1/2">
+                        <div class="border-b border-gray-200 mb-8">
+                            <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                                <button id="tab-btn-1" class="tab-btn tab-active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-translate="tab-triagem">1. Triagem Guiada</button>
+                                <button id="tab-btn-2" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm" data-translate="tab-analise">2. Análise Inteligente</button>
+                                <button id="tab-btn-3" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm" data-translate="tab-relatorio">3. Relatório e Ação</button>
+                            </nav>
+                        </div>
+
+                        <div id="tab-panel-1" class="tab-panel">
+                            <h4 id="panel1-title" class="text-2xl font-bold mb-4">Identificação e Inserção de Dados Simplificada</h4>
+                            <p id="panel1-text1" class="text-slate-600 mb-4">O processo começa com a coleta de dados básicos do paciente e consentimento informado, com suporte de leitura em voz (text-to-speech) para garantir acessibilidade. Em seguida, o usuário insere os resultados dos exames de forma flexível, seja em modo "Triagem Rápida" para emergências ou "Modo Completo" para uma análise detalhada.</p>
+                        </div>
+                        <div id="tab-panel-2" class="tab-panel hidden">
+                            <h4 id="panel2-title" class="text-2xl font-bold mb-4">Inteligência Artificial como seu Mentor Médico Virtual</h4>
+                            <p id="panel2-text1" class="text-slate-600 mb-4">Aqui reside o poder do MISSIONLAB. Após a inserção dos dados, a IA integrada atua como um "segundo par de olhos", analisando as informações em conjunto com o histórico clínico. A IA não substitui o médico, mas oferece um suporte valioso, sugerindo possíveis diagnósticos diferenciais e destacando achados críticos.</p>
+                        </div>
+                        <div id="tab-panel-3" class="tab-panel hidden">
+                            <h4 id="panel3-title" class="text-2xl font-bold mb-4">Geração de Relatórios e Compartilhamento Seguro</h4>
+                            <p id="panel3-text1" class="text-slate-600 mb-4">Com a análise completa, o MISSIONLAB gera um relatório estruturado e claro em formato PDF. Este documento pode ser facilmente salvo, impresso ou compartilhado de forma segura com uma equipe de retaguarda ou um especialista, assim que uma conexão estiver disponível.</p>
+                        </div>
+                    </div>
+                    <div class="md:w-1/2">
+                        <img id="solution-image" src="https://images.unsplash.com/photo-1584515933487-779824d29309?q=80&w=2070&auto=format&fit=crop" alt="[Imagem da solução Missionlab]" class="rounded-lg shadow-xl w-full h-full object-cover transition-opacity duration-300" onerror="this.onerror=null;this.src='https://placehold.co/600x400/e2e8f0/334155?text=Solução+Missionlab';">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seção Diferenciais -->
+        <section id="diferenciais" class="py-16 md:py-24">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h3 id="diferenciais-title" class="text-3xl md:text-4xl font-bold mb-4">Diferenciais que Transformam a Missão</h3>
+                    <p id="diferenciais-text" class="max-w-3xl mx-auto text-slate-600">O MISSIONLAB foi construído sobre pilares tecnológicos que garantem resiliência, inteligência e acessibilidade, independentemente das condições do campo.</p>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow"><h4 class="text-lg font-bold mb-2 flex items-center"><i class="fas fa-globe differentiator-icon"></i><span data-translate="diff-offline-title">Resiliência Offline</span></h4><p class="text-slate-600 text-sm" data-translate="diff-offline-text">Funciona 100% offline, garantindo suporte contínuo mesmo nos locais mais remotos e sem internet.</p></div>
+                    <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow"><h4 class="text-lg font-bold mb-2 flex items-center"><i class="fas fa-brain differentiator-icon"></i><span data-translate="diff-ai-title">Mentor com IA</span></h4><p class="text-slate-600 text-sm" data-translate="diff-ai-text">A IA do Google Gemini atua como um assistente, oferecendo insights e possíveis diagnósticos diferenciais.</p></div>
+                    <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow"><h4 class="text-lg font-bold mb-2 flex items-center"><i class="fas fa-lock differentiator-icon"></i><span data-translate="diff-privacy-title">Privacidade Total</span></h4><p class="text-slate-600 text-sm" data-translate="diff-privacy-text">Os dados do paciente permanecem exclusivamente no dispositivo, garantindo segurança e conformidade.</p></div>
+                    <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow"><h4 class="text-lg font-bold mb-2 flex items-center"><i class="fas fa-language differentiator-icon"></i><span data-translate="diff-accessible-title">Acessível e Multilíngue</span></h4><p class="text-slate-600 text-sm" data-translate="diff-accessible-text">Com text-to-speech e interface em PT, ES e EN, quebra barreiras culturais e de alfabetização.</p></div>
+                    <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow"><h4 class="text-lg font-bold mb-2 flex items-center"><i class="fas fa-mobile-alt differentiator-icon"></i><span data-translate="diff-pwa-title">Progressive Web App (PWA)</span></h4><p class="text-slate-600 text-sm" data-translate="diff-pwa-text">Instale no seu dispositivo como um app nativo, com acesso rápido e sem precisar de lojas de aplicativos.</p></div>
+                    <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow"><h4 class="text-lg font-bold mb-2 flex items-center"><i class="fas fa-cogs differentiator-icon"></i><span data-translate="diff-future-title">Pronto para o Futuro</span></h4><p class="text-slate-600 text-sm" data-translate="diff-future-text">Arquitetura preparada para integração com padrões globais de saúde (FHIR/HL7).</p></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seção Impacto com Gráfico -->
+        <section id="impacto" class="py-16 md:py-24 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h3 id="impacto-title" class="text-3xl md:text-4xl font-bold mb-4">Visualizando o Impacto no Cuidado</h3>
+                    <p id="impacto-text" class="max-w-3xl mx-auto text-slate-600">O uso do MISSIONLAB não apenas otimiza o trabalho no campo, mas gera benefícios tangíveis que se traduzem em um cuidado mais seguro e eficaz. O gráfico abaixo ilustra o impacto esperado da ferramenta na rotina de saúde missionária.</p>
+                </div>
+                <div class="chart-container">
+                    <canvas id="impactChart"></canvas>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800 text-white">
+        <div class="container mx-auto px-6 py-12 text-center">
+            <h3 id="footer-title" class="text-2xl font-bold mb-4">Pronto para o Campo. Pronto para a Missão.</h3>
+            <p id="footer-text" class="max-w-2xl mx-auto text-slate-300 mb-8">Inove sua missão, amplie seu impacto e cuide de vidas com a união poderosa da tecnologia e da compaixão.</p>
+            <a href="mailto:contato@telessaudemissionaria.org" id="footer-contact-button" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-full hover:bg-blue-500 transition-colors">Entre em Contato</a>
+            <p id="footer-copyright" class="text-sm text-slate-400 mt-8">&copy; 2024 Telessaúde Missionária. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- TRADUÇÃO ---
+    const translations = {
+        pt: {
+            pageTitle: "MISSIONLAB – Análise Laboratorial Inteligente para Missões",
+            navDesafio: "O Desafio",
+            navSolucao: "A Solução",
+            navDiferenciais: "Diferenciais",
+            navImpacto: "Impacto",
+            heroTitle: "Análise Laboratorial Inteligente para Missões",
+            heroSubtitle: "\"Se Deus nos chamou para servir aos confins da terra, Ele também proverá os meios para cuidar de quem serve.\"",
+            heroButtonDiscover: "Conheça a Ferramenta",
+            heroButtonAccessApp: "ACESSE A APP",
+            desafioTitle: "O Desafio no Campo Missionário",
+            desafioText: "Em muitos campos missionários, a distância, a falta de especialistas e a conectividade limitada transformam cada decisão de saúde em um desafio crítico. Missionários enfrentam a incerteza e a angústia de interpretar dados de saúde sem o apoio adequado, onde cada minuto conta.",
+            desafioIsoTitle: "Isolamento Geográfico",
+            desafioIsoText: "A vasta distância de centros médicos qualificados torna o acesso a especialistas quase impossível.",
+            desafioConTitle: "Conectividade Limitada",
+            desafioConText: "A falta de internet estável impede o acesso a teleconsultas ou pesquisas em tempo real.",
+            desafioIncTitle: "Incerteza no Diagnóstico",
+            desafioIncText: "A pressão de tomar decisões clínicas complexas sem um suporte confiável gera estresse e riscos.",
+            solucaoTitle: "A Solução: Como o MISSIONLAB Capacita Você",
+            solucaoText: "O MISSIONLAB é uma plataforma desenhada para simplificar a complexidade. Através de um assistente passo a passo, ele guia o usuário em cada etapa, desde a coleta de dados até a geração de um relatório inteligente, transformando incerteza em ação confiante.",
+            tabTriagem: "1. Triagem Guiada",
+            tabAnalise: "2. Análise Inteligente",
+            tabRelatorio: "3. Relatório e Ação",
+            panel1Title: "Identificação e Inserção de Dados Simplificada",
+            panel1Text1: "O processo começa com a coleta de dados básicos do paciente e consentimento informado, com suporte de leitura em voz (text-to-speech) para garantir acessibilidade. Em seguida, o usuário insere os resultados dos exames de forma flexível, seja em modo \"Triagem Rápida\" para emergências ou \"Modo Completo\" para uma análise detalhada.",
+            panel2Title: "Inteligência Artificial como seu Mentor Médico Virtual",
+            panel2Text1: "Aqui reside o poder do MISSIONLAB. Após a inserção dos dados, a IA integrada atua como um \"segundo par de olhos\", analisando as informações em conjunto com o histórico clínico. A IA não substitui o médico, mas oferece um suporte valioso, sugerindo possíveis diagnósticos diferenciais e destacando achados críticos.",
+            panel3Title: "Geração de Relatórios e Compartilhamento Seguro",
+            panel3Text1: "Com a análise completa, o MISSIONLAB gera um relatório estruturado e claro em formato PDF. Este documento pode ser facilmente salvo, impresso ou compartilhado de forma segura com uma equipe de retaguarda ou um especialista, assim que uma conexão estiver disponível.",
+            diferenciaisTitle: "Diferenciais que Transformam a Missão",
+            diferenciaisText: "O MISSIONLAB foi construído sobre pilares tecnológicos que garantem resiliência, inteligência e acessibilidade, independentemente das condições do campo.",
+            diffOfflineTitle: "Resiliência Offline",
+            diffOfflineText: "Funciona 100% offline, garantindo suporte contínuo mesmo nos locais mais remotos e sem internet.",
+            diffAiTitle: "Mentor com IA",
+            diffAiText: "A IA do Google Gemini atua como um assistente, oferecendo insights e possíveis diagnósticos diferenciais.",
+            diffPrivacyTitle: "Privacidade Total",
+            diffPrivacyText: "Os dados do paciente permanecem exclusivamente no dispositivo, garantindo segurança e conformidade.",
+            diffAccessibleTitle: "Acessível e Multilíngue",
+            diffAccessibleText: "Com text-to-speech e interface em PT, ES e EN, quebra barreiras culturais e de alfabetização.",
+            diffPwaTitle: "Progressive Web App (PWA)",
+            diffPwaText: "Instale no seu dispositivo como um app nativo, com acesso rápido e sem precisar de lojas de aplicativos.",
+            diffFutureTitle: "Pronto para o Futuro",
+            diffFutureText: "Arquitetura preparada para integração com padrões globais de saúde (FHIR/HL7).",
+            impactoTitle: "Visualizando o Impacto no Cuidado",
+            impactoText: "O uso do MISSIONLAB não apenas otimiza o trabalho no campo, mas gera benefícios tangíveis que se traduzem em um cuidado mais seguro e eficaz. O gráfico abaixo ilustra o impacto esperado da ferramenta na rotina de saúde missionária.",
+            footerTitle: "Pronto para o Campo. Pronto para a Missão.",
+            footerText: "Inove sua missão, amplie seu impacto e cuide de vidas com a união poderosa da tecnologia e da compaixão.",
+            footerContactButton: "Entre em Contato",
+            footerCopyright: "&copy; 2024 Telessaúde Missionária. Todos os direitos reservados.",
+            modalTitle: "Aviso Importante",
+            modalDisclaimer: "Os valores de laboratório indicados neste programa foram extraídos das melhores fontes bibliográficas. Não obstante são apenas referências de uso acadêmico e ante qualquer dúvida sugerimos consulte com seu laboratório de referência. Não nos responsabilizamos pela aplicação de ditos valores a situações clínicas pontuais. Isenção de responsabilidade: Não somos responsáveis por nenhum tipo de falha na app, ou erro. Aceita usar a app tal como é, sem garantia de nenhum tipo. O uso deste programa significa que está de acordo com as POLÍTICAS DE PRIVACIDADE.",
+            privacyText: "Li e concordo com as POLÍTICAS DE PRIVACIDADE",
+            acceptButton: "Aceitar e Continuar",
+            chartLabel1: "Redução de Erros", chartLabel2: "Agilidade na Decisão", chartLabel3: "Segurança do Paciente", chartTitle: "Melhorias com o Uso do App (%)"
+        },
+        es: {
+            pageTitle: "MISSIONLAB – Análisis Laboratorial Inteligente para Misiones",
+            navDesafio: "El Desafío",
+            navSolucao: "La Solución",
+            navDiferenciais: "Diferenciales",
+            navImpacto: "Impacto",
+            heroTitle: "Análisis Laboratorial Inteligente para Misiones",
+            heroSubtitle: "\"Si Dios nos llamó a servir hasta los confines de la tierra, Él también proveerá los medios para cuidar a quienes sirven.\"",
+            heroButtonDiscover: "Conozca la Herramienta",
+            heroButtonAccessApp: "ACCEDER A LA APP",
+            desafioTitle: "El Desafío en el Campo Misionero",
+            desafioText: "En muchos campos misioneros, la distancia, la falta de especialistas y la conectividad limitada transforman cada decisión de salud en un desafío crítico. Los misioneros enfrentan la incertidumbre y la angustia de interpretar datos de salud sin el apoyo adecuado, donde cada minuto cuenta.",
+            desafioIsoTitle: "Aislamiento Geográfico",
+            desafioIsoText: "La vasta distancia de centros médicos calificados hace que el acceso a especialistas sea casi imposible.",
+            desafioConTitle: "Conectividad Limitada",
+            desafioConText: "La falta de internet estable impide el acceso a teleconsultas o búsquedas en tiempo real.",
+            desafioIncTitle: "Incertidumbre en el Diagnóstico",
+            desafioIncText: "La presión de tomar decisiones clínicas complejas sin un soporte confiable genera estrés y riesgos.",
+            solucaoTitle: "La Solución: Cómo MISSIONLAB le Capacita",
+            solucaoText: "MISSIONLAB es una plataforma diseñada para simplificar la complejidad. A través de un asistente paso a paso, guía al usuario en cada etapa, desde la recopilación de datos hasta la generación de un informe inteligente, transformando la incertidumbre en una acción segura.",
+            tabTriagem: "1. Cribado Guiado",
+            tabAnalise: "2. Análisis Inteligente",
+            tabRelatorio: "3. Informe y Acción",
+            panel1Title: "Identificación e Inserción de Datos Simplificada",
+            panel1Text1: "El proceso comienza con la recopilación de datos básicos del paciente y el consentimiento informado, con soporte de lectura por voz (text-to-speech) para garantizar la accesibilidad. Luego, el usuario introduce los resultados de los exámenes de forma flexible, ya sea en modo \"Cribado Rápido\" para emergencias o \"Modo Completo\" para un análisis detallado.",
+            panel2Title: "Inteligencia Artificial como su Mentor Médico Virtual",
+            panel2Text1: "Aquí reside el poder de MISSIONLAB. Después de la inserción de datos, la IA integrada actúa como un \"segundo par de ojos\", analizando la información junto con el historial clínico. La IA no reemplaza al médico, pero ofrece un valioso soporte, sugiriendo posibles diagnósticos diferenciales y destacando hallazgos críticos.",
+            panel3Title: "Generación de Informes y Compartir de Forma Segura",
+            panel3Text1: "Con el análisis completo, MISSIONLAB genera un informe estructurado y claro en formato PDF. Este documento se puede guardar, imprimir o compartir de forma segura con un equipo de retaguardia o un especialista, tan pronto como haya una conexión disponible.",
+            diferenciaisTitle: "Diferenciales que Transforman la Misión",
+            diferenciaisText: "MISSIONLAB se ha construido sobre pilares tecnológicos que garantizan la resiliencia, la inteligencia y la accesibilidad, independientemente de las condiciones del campo.",
+            diffOfflineTitle: "Resiliencia sin conexión",
+            diffOfflineText: "Funciona 100% sin conexión, garantizando un soporte continuo incluso en los lugares más remotos y sin internet.",
+            diffAiTitle: "Mentor con IA",
+            diffAiText: "La IA de Google Gemini actúa como asistente, ofreciendo conocimientos y posibles diagnósticos diferenciales.",
+            diffPrivacyTitle: "Privacidad Total",
+            diffPrivacyText: "Los datos del paciente permanecen exclusivamente en el dispositivo, garantizando la seguridad y el cumplimiento.",
+            diffAccessibleTitle: "Accesible y Multilingüe",
+            diffAccessibleText: "Con texto a voz e interfaz en PT, ES y EN, rompe las barreras culturales y de alfabetización.",
+            diffPwaTitle: "Progressive Web App (PWA)",
+            diffPwaText: "Instálela en su dispositivo como una aplicación nativa, con acceso rápido y sin necesidad de tiendas de aplicaciones.",
+            diffFutureTitle: "Listo para el futuro",
+            diffFutureText: "Arquitectura preparada para la integración con los estándares sanitarios mundiales (FHIR/HL7).",
+            impactoTitle: "Visualizando el Impacto en el Cuidado",
+            impactoText: "El uso de MISSIONLAB no solo optimiza el trabajo de campo, sino que genera beneficios tangibles que se traducen en una atención más segura y eficaz. El siguiente gráfico ilustra el impacto esperado de la herramienta en la rutina de salud misionera.",
+            footerTitle: "Listo para el Campo. Listo para la Misión.",
+            footerText: "Innove su misión, amplíe su impacto y cuide vidas con la poderosa unión de tecnología y compasión.",
+            footerContactButton: "Contáctenos",
+            footerCopyright: "&copy; 2024 Telessaúde Missionária. Todos los derechos reservados.",
+            modalTitle: "Aviso Importante",
+            modalDisclaimer: "Los valores de laboratorio indicados en este programa han sido extraídos de las mejores fuentes bibliográficas. No obstante, son solo referencias de uso académico y ante cualquier duda sugerimos consultar con su laboratorio de referencia. No nos responsabilizamos por la aplicación de dichos valores a situaciones clínicas puntuales. Exención de responsabilidad: No somos responsables de ningún tipo de fallo en la app, o error. Acepta usar la app tal como es, sin garantía de ningún tipo. El uso de este programa significa que está de acuerdo con las POLÍTICAS DE PRIVACIDAD.",
+            privacyText: "He leído y acepto las POLÍTICAS DE PRIVACIDAD",
+            acceptButton: "Aceptar y Continuar",
+            chartLabel1: "Reducción de Errores", chartLabel2: "Agilidad en la Decisión", chartLabel3: "Seguridad del Paciente", chartTitle: "Mejoras con el Uso de la App (%)"
+        },
+        en: {
+            pageTitle: "MISSIONLAB – Intelligent Laboratory Analysis for Missions",
+            navDesafio: "The Challenge",
+            navSolucao: "The Solution",
+            navDiferenciais: "Differentiators",
+            navImpacto: "Impact",
+            heroTitle: "Intelligent Laboratory Analysis for Missions",
+            heroSubtitle: "\"If God has called us to serve to the ends of the earth, He will also provide the means to care for those who serve.\"",
+            heroButtonDiscover: "Discover the Tool",
+            heroButtonAccessApp: "ACCESS THE APP",
+            desafioTitle: "The Challenge in the Mission Field",
+            desafioText: "In many mission fields, distance, lack of specialists, and limited connectivity turn every health decision into a critical challenge. Missionaries face the uncertainty and distress of interpreting health data without adequate support, where every minute counts.",
+            desafioIsoTitle: "Geographical Isolation",
+            desafioIsoText: "The vast distance from qualified medical centers makes access to specialists almost impossible.",
+            desafioConTitle: "Limited Connectivity",
+            desafioConText: "The lack of stable internet prevents access to teleconsultations or real-time research.",
+            desafioIncTitle: "Diagnostic Uncertainty",
+            desafioIncText: "The pressure to make complex clinical decisions without reliable support generates stress and risks.",
+            solucaoTitle: "The Solution: How MISSIONLAB Empowers You",
+            solucaoText: "MISSIONLAB is a platform designed to simplify complexity. Through a step-by-step wizard, it guides the user at every stage, from data collection to the generation of an intelligent report, turning uncertainty into confident action.",
+            tabTriagem: "1. Guided Triage",
+            tabAnalise: "2. Smart Analysis",
+            tabRelatorio: "3. Report and Action",
+            panel1Title: "Simplified Data Entry and Identification",
+            panel1Text1: "The process begins with collecting basic patient data and informed consent, with text-to-speech support to ensure accessibility. Next, the user enters the test results flexibly, either in \"Quick Triage\" mode for emergencies or \"Full Mode\" for a detailed analysis.",
+            panel2Title: "Artificial Intelligence as Your Virtual Medical Mentor",
+            panel2Text1: "Herein lies the power of MISSIONLAB. After data entry, the integrated AI acts as a \"second pair of eyes,\" analyzing the information along with the clinical history. The AI does not replace a doctor but offers valuable support, suggesting possible differential diagnoses and highlighting critical findings.",
+            panel3Title: "Report Generation and Secure Sharing",
+            panel3Text1: "With the analysis complete, MISSIONLAB generates a structured and clear report in PDF format. This document can be easily saved, printed, or securely shared with a back-end team or a specialist as soon as a connection is available.",
+            diferenciaisTitle: "Differentiators that Transform the Mission",
+            diferenciaisText: "MISSIONLAB is built on technological pillars that ensure resilience, intelligence, and accessibility, regardless of field conditions.",
+            diffOfflineTitle: "Offline Resilience",
+            diffOfflineText: "Works 100% offline, ensuring continuous support even in the most remote locations without internet.",
+            diffAiTitle: "AI Mentor",
+            diffAiText: "Google Gemini's AI acts as an assistant, offering insights and possible differential diagnoses.",
+            diffPrivacyTitle: "Total Privacy",
+            diffPrivacyText: "Patient data remains exclusively on the device, ensuring security and compliance.",
+            diffAccessibleTitle: "Accessible & Multilingual",
+            diffAccessibleText: "With text-to-speech and an interface in PT, ES, and EN, it breaks cultural and literacy barriers.",
+            diffPwaTitle: "Progressive Web App (PWA)",
+            diffPwaText: "Install on your device like a native app, with quick access and no need for app stores.",
+            diffFutureTitle: "Future-Ready",
+            diffFutureText: "Architecture prepared for integration with global health standards (FHIR/HL7).",
+            impactoTitle: "Visualizing the Impact on Care",
+            impactoText: "Using MISSIONLAB not only optimizes work in the field but also generates tangible benefits that translate into safer and more effective care. The chart below illustrates the expected impact of the tool on the missionary health routine.",
+            footerTitle: "Ready for the Field. Ready for the Mission.",
+            footerText: "Innovate your mission, expand your impact, and care for lives with the powerful union of technology and compassion.",
+            footerContactButton: "Contact Us",
+            footerCopyright: "&copy; 2024 Missionary Telehealth. All rights reserved.",
+            modalTitle: "Important Notice",
+            modalDisclaimer: "The laboratory values indicated in this program have been extracted from the best bibliographic sources. Nevertheless, they are only references for academic use and in case of any doubt, we suggest you consult with your reference laboratory. We are not responsible for the application of said values to specific clinical situations. Disclaimer: We are not responsible for any type of failure in the app, or error. You agree to use the app as is, without warranty of any kind. The use of this program means that you agree to the PRIVACY POLICIES.",
+            privacyText: "I have read and agree to the PRIVACY POLICIES",
+            acceptButton: "Accept and Continue",
+            chartLabel1: "Error Reduction", chartLabel2: "Decision Agility", chartLabel3: "Patient Safety", chartTitle: "Improvements with App Usage (%)"
+        }
+    };
+
+    let currentLang = 'pt';
+    let impactChartInstance = null;
+    
+    const solutionImages = {
+        'tab-btn-1': 'https://images.unsplash.com/photo-1584515933487-779824d29309?q=80&w=2070&auto=format&fit=crop',
+        'tab-btn-2': 'https://images.unsplash.com/photo-1677756119517-756a188d2d94?q=80&w=2070&auto=format&fit=crop',
+        'tab-btn-3': 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=2070&auto=format&fit=crop'
+    };
+
+    function setLanguage(lang) {
+        if (!translations[lang]) return;
+        currentLang = lang;
+        
+        document.documentElement.lang = lang === 'pt' ? 'pt-BR' : lang;
+        const translation = translations[lang];
+
+        document.querySelectorAll('[data-translate]').forEach(el => {
+            const key = el.getAttribute('data-translate');
+             if (translation[key]) {
+                 el.textContent = translation[key];
+            }
+        });
+        
+        document.getElementById('page-title').textContent = translation.pageTitle;
+        document.getElementById('hero-title').textContent = translation.heroTitle;
+        document.getElementById('hero-subtitle').textContent = translation.heroSubtitle;
+        document.getElementById('desafio-title').textContent = translation.desafioTitle;
+        document.getElementById('desafio-text').textContent = translation.desafioText;
+        document.getElementById('desafio-iso-title').textContent = translation.desafioIsoTitle;
+        document.getElementById('desafio-iso-text').textContent = translation.desafioIsoText;
+        document.getElementById('desafio-con-title').textContent = translation.desafioConTitle;
+        document.getElementById('desafio-con-text').textContent = translation.desafioConText;
+        document.getElementById('desafio-inc-title').textContent = translation.desafioIncTitle;
+        document.getElementById('desafio-inc-text').textContent = translation.desafioIncText;
+        document.getElementById('solucao-title').textContent = translation.solucaoTitle;
+        document.getElementById('solucao-text').textContent = translation.solucaoText;
+        document.getElementById('panel1-title').textContent = translation.panel1Title;
+        document.getElementById('panel1-text1').textContent = translation.panel1Text1;
+        document.getElementById('panel2-title').textContent = translation.panel2Title;
+        document.getElementById('panel2-text1').textContent = translation.panel2Text1;
+        document.getElementById('panel3-title').textContent = translation.panel3Title;
+        document.getElementById('panel3-text1').textContent = translation.panel3Text1;
+        document.getElementById('diferenciais-title').textContent = translation.diferenciaisTitle;
+        document.getElementById('diferenciais-text').textContent = translation.diferenciaisText;
+        document.getElementById('impacto-title').textContent = translation.impactoTitle;
+        document.getElementById('impacto-text').textContent = translation.impactoText;
+        document.getElementById('footer-title').textContent = translation.footerTitle;
+        document.getElementById('footer-text').textContent = translation.footerText;
+        document.getElementById('footer-copyright').innerHTML = translation.footerCopyright;
+        document.getElementById('modal-title').textContent = translation.modalTitle;
+        document.getElementById('modal-disclaimer').textContent = translation.modalDisclaimer;
+        document.getElementById('privacy-text').textContent = translation.privacyText;
+        document.getElementById('accept-button').textContent = translation.acceptButton;
+
+        // Atualiza botões de idioma
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.lang === lang);
+        });
+
+        // Recria o gráfico com os novos rótulos
+        createImpactChart();
+    }
+
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            setLanguage(e.target.dataset.lang);
+        });
+    });
+
+    // --- LÓGICA DO MENU MÓVEL ---
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    mobileMenuButton.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+    });
+
+    // --- LÓGICA DAS ABAS ---
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+    const solutionImage = document.getElementById('solution-image');
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Handle tab button style
+            tabButtons.forEach(btn => {
+                btn.classList.remove('tab-active');
+                btn.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+            });
+            button.classList.add('tab-active');
+            button.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+            
+            // Handle tab panel visibility
+            const targetPanelId = button.id.replace('btn', 'panel');
+            tabPanels.forEach(panel => {
+                panel.classList.toggle('hidden', panel.id !== targetPanelId);
+            });
+
+            // Handle image switching
+            const newImageSrc = solutionImages[button.id];
+            if (newImageSrc) {
+                solutionImage.style.opacity = 0;
+                setTimeout(() => {
+                    solutionImage.src = newImageSrc;
+                    solutionImage.style.opacity = 1;
+                }, 300); // Match transition duration
+            }
+        });
+    });
+
+    // --- LÓGICA DO GRÁFICO ---
+    function createImpactChart() {
+        if (impactChartInstance) {
+            impactChartInstance.destroy();
+        }
+        const ctx = document.getElementById('impactChart').getContext('2d');
+        const t = translations[currentLang];
+        impactChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [t.chartLabel1, t.chartLabel2, t.chartLabel3],
+                datasets: [{
+                    label: t.chartTitle,
+                    data: [75, 90, 85],
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(75, 192, 192, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + "%"
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    title: {
+                        display: true,
+                        text: t.chartTitle,
+                        font: {
+                           size: 16
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // --- LÓGICA DO MODAL ---
+    const modal = document.getElementById('disclaimer-modal');
+    const checkbox = document.getElementById('privacy-checkbox');
+    const acceptButton = document.getElementById('accept-button');
+
+    if (sessionStorage.getItem('disclaimerAccepted') !== 'true') {
+        modal.classList.remove('hidden');
+    }
+
+    checkbox.addEventListener('change', () => {
+        if (checkbox.checked) {
+            acceptButton.disabled = false;
+            acceptButton.classList.remove('opacity-50', 'cursor-not-allowed');
+        } else {
+            acceptButton.disabled = true;
+            acceptButton.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+    });
+
+    acceptButton.addEventListener('click', () => {
+        if (checkbox.checked) {
+            modal.classList.add('hidden');
+            sessionStorage.setItem('disclaimerAccepted', 'true');
+        }
+    });
+    
+    // --- INICIALIZAÇÃO ---
+    setLanguage('pt'); // Define o idioma padrão na carga
+});
+</script>
+</body>
+</html>
